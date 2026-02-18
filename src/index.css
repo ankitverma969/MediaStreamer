@@ -1,68 +1,207 @@
+/* ───────── RESET ───────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ───────── ROOT THEME ───────── */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #181818;
+  --bg-card: #212121;
+  --bg-hover: #2a2a2a;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --text-primary: #f1f1f1;
+  --text-secondary: #aaaaaa;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  --accent: #ff4d4d;
+  --accent-hover: #ff6666;
+
+  --border: #333333;
+
+  --skeleton-bg: #2a2a2a;
+  --skeleton-shine: #3a3a3a;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  --shadow-sm: 0 1px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+
+  --transition: 0.2s ease;
+
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: clamp(14px, 0.9vw, 16px);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+/* ───────── BODY ───────── */
+body {
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+/* ───────── ROOT LAYOUT ───────── */
+#root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* ───────── GLOBAL ELEMENTS ───────── */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  border: none;
+  background: none;
+  color: inherit;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* ───────── FOCUS STYLE (ACCESSIBILITY) ───────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───────── TEXT SELECTION ───────── */
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ───────── SCROLLBAR (YOUTUBE DARK STYLE) ───────── */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+/* ───────── CONTAINER UTILITY ───────── */
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ───────── FLEX UTILITIES ───────── */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ───────── BUTTON BASE (REUSABLE) ───────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--bg-card);
+  transition: background var(--transition), transform 0.15s ease;
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.04);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* ───────── SKELETON BASE ───────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 180% 0;
   }
-  a:hover {
-    color: #747bff;
+  100% {
+    background-position: -180% 0;
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+/* ───────── TEXT UTILITIES ───────── */
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-small {
+  font-size: 0.8rem;
+}
+
+.text-muted {
+  opacity: 0.7;
+}
+
+/* ───────── SPACING UTILITIES ───────── */
+.mt-sm { margin-top: 0.5rem; }
+.mt-md { margin-top: 1rem; }
+.mt-lg { margin-top: 1.5rem; }
+
+.mb-sm { margin-bottom: 0.5rem; }
+.mb-md { margin-bottom: 1rem; }
+.mb-lg { margin-bottom: 1.5rem; }
+
+/* ───────── RESPONSIVE ───────── */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
   }
 }
