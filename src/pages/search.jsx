@@ -1,177 +1,376 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import './Search.css'
 
+const STORAGE_KEY = "search_history"
+const MAX_HISTORY = 10
+
 export function Search() {
+
+    const navigate = useNavigate()
+
     const [searchParams] = useSearchParams()
+
     const query = searchParams.get('q') || ''
+
     const [videos, setVideos] = useState([])
+
     const [loading, setLoading] = useState(false)
+
     const [error, setError] = useState(null)
 
+    const [history, setHistory] = useState([])
+
+
+
+    /* LOAD HISTORY */
+
     useEffect(() => {
+
+        const saved =
+            JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
+
+        setHistory(saved)
+
+    }, [])
+
+
+
+    /* SAVE HISTORY */
+
+    function saveSearchHistory(searchTerm) {
+
+        if (!searchTerm.trim()) return
+
+        let saved =
+            JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
+
+        // remove duplicate
+        saved = saved.filter(item => item !== searchTerm)
+
+        // add at start
+        saved.unshift(searchTerm)
+
+        // limit size
+        saved = saved.slice(0, MAX_HISTORY)
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(saved)
+        )
+
+        setHistory(saved)
+
+    }
+
+
+
+    /* SEARCH API */
+
+    useEffect(() => {
+
         if (!query.trim()) {
+
             setVideos([])
             return
+
         }
 
+        saveSearchHistory(query)
+
         async function searchVideos() {
+
             setLoading(true)
             setError(null)
+
             try {
-                const apiKey = import.meta.env.VITE_MEDIA_API
+
+                const apiKey =
+                    import.meta.env.VITE_MEDIA_API
+
                 if (!apiKey) {
-                    // Use placeholder search results when no API key is configured
-                    setVideos(getPlaceholderSearchResults(query))
+
+                    setVideos(
+                        getPlaceholderSearchResults(query)
+                    )
+
                     return
                 }
 
                 const res = await fetch(
+
                     `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${apiKey}`
+
                 )
+
                 const data = await res.json()
 
-                if (!data.items) {
-                    throw new Error(data.error?.message || 'Failed to search videos')
-                }
+                if (!data.items)
+                    throw new Error("Search failed")
 
-                const formattedVideos = data.items.map((item) => ({
-                    id: item.id.videoId,
-                    title: item.snippet.title,
-                    channel: item.snippet.channelTitle,
-                    thumbnail: item.snippet.thumbnails.medium.url,
-                    publishedAt: timeAgo(item.snippet.publishedAt),
-                    description: item.snippet.description,
-                }))
-                setVideos(formattedVideos)
-            } catch (err) {
-                console.error('Error searching videos:', err)
-                setError(err.message)
-                setVideos(getPlaceholderSearchResults(query))
-            } finally {
-                setLoading(false)
+                const formatted =
+                    data.items.map(item => ({
+
+                        id: item.id.videoId,
+
+                        title: item.snippet.title,
+
+                        channel: item.snippet.channelTitle,
+
+                        thumbnail:
+                            item.snippet.thumbnails.medium.url,
+
+                        publishedAt:
+                            timeAgo(item.snippet.publishedAt),
+
+                        description:
+                            item.snippet.description,
+
+                    }))
+
+                setVideos(formatted)
+
             }
+            catch (err) {
+
+                setError(err.message)
+
+                setVideos(
+                    getPlaceholderSearchResults(query)
+                )
+
+            }
+            finally {
+
+                setLoading(false)
+
+            }
+
         }
 
         searchVideos()
+
     }, [query])
 
+
+
+    /* CLICK HISTORY */
+
+    function selectHistory(term) {
+
+        navigate(`/search?q=${term}`)
+
+    }
+
+
+
+    /* CLEAR HISTORY */
+
+    function clearHistory() {
+
+        localStorage.removeItem(STORAGE_KEY)
+
+        setHistory([])
+
+    }
+
+
+
     return (
+
         <div className="search-page">
+
+
+            {/* HEADER */}
+
             <div className="search-header">
+
                 <h2 className="search-title">
-                    {query ? `Search results for "${query}"` : 'Enter a search query'}
+
+                    {query
+                        ? `Search results for "${query}"`
+                        : "Search videos"}
+
                 </h2>
-                {videos.length > 0 && !loading && (
-                    <p className="search-count">{videos.length} results found</p>
-                )}
+
             </div>
 
-            {error && (
-                <div className="error-banner">
-                    <p>Could not load live data — showing demo content.</p>
+
+
+            {/* SEARCH HISTORY */}
+
+            {!query && history.length > 0 && (
+
+                <div className="search-history">
+
+                    <div className="history-header">
+
+                        <span>Recent searches</span>
+
+                        <button onClick={clearHistory}>
+                            Clear
+                        </button>
+
+                    </div>
+
+
+                    {history.map((item, index) => (
+
+                        <div
+                            key={index}
+                            className="history-item"
+                            onClick={() => selectHistory(item)}
+                        >
+
+                            🔍 {item}
+
+                        </div>
+
+                    ))}
+
                 </div>
+
             )}
 
-            {loading ? (
-                <div className="search-results">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="skeleton-result">
-                            <div className="skeleton-thumb" />
-                            <div className="skeleton-details">
-                                <div className="skeleton-title" />
-                                <div className="skeleton-channel" />
-                                <div className="skeleton-description" />
-                            </div>
-                        </div>
-                    ))}
+
+
+            {/* ERROR */}
+
+            {error &&
+                <div className="error-banner">
+                    Showing demo content
                 </div>
-            ) : query && videos.length > 0 ? (
+            }
+
+
+
+            {/* LOADING */}
+
+            {loading ?
+
                 <div className="search-results">
-                    {videos.map((video) => (
-                        <Link to={`/watch/${video.id}`} key={video.id} className="search-result">
+                    Loading...
+                </div>
+
+                :
+
+                query && videos.length > 0 ?
+
+                <div className="search-results">
+
+                    {videos.map(video => (
+
+                        <Link
+                            to={`/watch/${video.id}`}
+                            key={video.id}
+                            className="search-result"
+                        >
+
                             <div className="result-thumb-wrapper">
-                                <img src={video.thumbnail} alt={video.title} className="result-thumbnail" />
-                                <div className="result-overlay">
-                                    <span className="play-icon">&#9654;</span>
-                                </div>
+
+                                <img
+                                    src={video.thumbnail}
+                                    className="result-thumbnail"
+                                />
+
                             </div>
+
                             <div className="result-details">
-                                <h3 className="result-title">{video.title}</h3>
-                                <p className="result-channel">{video.channel}</p>
-                                <p className="result-meta">{video.publishedAt}</p>
-                                <p className="result-description">{video.description}</p>
+
+                                <h3 className="result-title">
+                                    {video.title}
+                                </h3>
+
+                                <p className="result-channel">
+                                    {video.channel}
+                                </p>
+
+                                <p className="result-meta">
+                                    {video.publishedAt}
+                                </p>
+
                             </div>
+
                         </Link>
+
                     ))}
+
                 </div>
-            ) : query ? (
+
+                :
+
+                query ?
+
                 <div className="no-results">
-                    <p>No results found for "{query}"</p>
-                    <p className="no-results-sub">Try different keywords or check your spelling</p>
+
+                    No results found
+
                 </div>
-            ) : null}
+
+                :
+
+                null
+
+            }
+
         </div>
+
     )
+
 }
 
+
+
+/* TIME */
+
 function timeAgo(dateString) {
-    const date = new Date(dateString)
-    const now = new Date()
-    const seconds = Math.floor((now - date) / 1000)
+
+    const seconds =
+        Math.floor(
+            (Date.now() - new Date(dateString)) / 1000
+        )
 
     const intervals = {
+
         year: 31536000,
         month: 2592000,
-        week: 604800,
         day: 86400,
         hour: 3600,
         minute: 60,
+
     }
 
-    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-        const interval = Math.floor(seconds / secondsInUnit)
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval !== 1 ? 's' : ''} ago`
-        }
+    for (const [unit, value] of Object.entries(intervals)) {
+
+        const count =
+            Math.floor(seconds / value)
+
+        if (count >= 1)
+            return `${count} ${unit}s ago`
+
     }
-    return 'just now'
+
+    return "just now"
+
 }
 
+
+
+/* DEMO */
+
 function getPlaceholderSearchResults(query) {
-    const baseResults = [
+
+    return [
+
         {
-            id: 'demo-1',
-            title: `Demo: ${query} Tutorial for Beginners`,
-            channel: 'Tech Academy',
-            thumbnail: 'https://via.placeholder.com/320x180/ff4d4d/ffffff?text=Demo+Video+1',
-            publishedAt: '2 weeks ago',
-            description: 'Learn the basics of ' + query + ' in this comprehensive tutorial for beginners. Perfect for getting started!',
-        },
-        {
-            id: 'demo-2',
-            title: `Advanced ${query} Techniques`,
-            channel: 'Pro Developer',
-            thumbnail: 'https://via.placeholder.com/320x180/4d94ff/ffffff?text=Demo+Video+2',
-            publishedAt: '1 month ago',
-            description: 'Take your ' + query + ' skills to the next level with these advanced techniques and best practices.',
-        },
-        {
-            id: 'demo-3',
-            title: `${query} in 10 Minutes`,
-            channel: 'Quick Learn',
-            thumbnail: 'https://via.placeholder.com/320x180/4dff88/ffffff?text=Demo+Video+3',
-            publishedAt: '3 days ago',
-            description: 'Quick and easy introduction to ' + query + '. Everything you need to know in just 10 minutes!',
-        },
-        {
-            id: 'demo-4',
-            title: `Complete ${query} Guide 2026`,
-            channel: 'Code Masters',
-            thumbnail: 'https://via.placeholder.com/320x180/ff8c42/ffffff?text=Demo+Video+4',
-            publishedAt: '5 days ago',
-            description: 'The ultimate guide to ' + query + ' updated for 2026. Includes all the latest features and updates.',
-        },
+            id: "demo1",
+            title: `${query} tutorial`,
+            channel: "MediaStreamer",
+            thumbnail:
+                "https://picsum.photos/320/180",
+            publishedAt: "2 days ago",
+        }
+
     ]
-    return baseResults
+
 }
